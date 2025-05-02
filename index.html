@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>我的 Electron 應用程式</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>病患管理系統</h1>
+
+    <h2>新增病人</h2>
+    <form id="add-patient-form">
+        <div>
+            <label for="name">姓名:</label>
+            <input type="text" id="name" required>
+        </div>
+        <div>
+            <label for="birthdate">生日:</label>
+            <input type="date" id="birthdate" required>
+        </div>
+        <button type="submit">新增病人</button>
+        <p id="add-patient-message"></p>
+    </form>
+
+    <h2>查詢病人 (依生日)</h2>
+    <form id="search-patient-form">
+        <div>
+            <label for="search-birthdate">查詢生日:</label>
+            <input type="date" id="search-birthdate" required>
+        </div>
+        <button type="submit">查詢</button>
+    </form>
+
+    <h2>病人列表</h2>
+    <ul id="patients-list"></ul>
+
+    <div id="search-results">
+        <h3>查詢結果</h3>
+        <ul id="search-results-list"></ul>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
