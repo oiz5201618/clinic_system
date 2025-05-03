@@ -3,8 +3,41 @@ body {
     margin: 20px;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
     margin-bottom: 10px;
+}
+
+nav {
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ccc;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+nav li {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+nav li.active {
+    border-bottom-color: #007bff;
+    font-weight: bold;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
 }
 
 form {
@@ -26,7 +59,8 @@ label {
 }
 
 input[type="text"],
-input[type="date"] {
+input[type="date"],
+input[type="email"] {
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 3px;
@@ -46,20 +80,37 @@ button:hover {
     background-color: #0056b3;
 }
 
-#patients-list, #search-results-list {
+#patients-list,
+#search-results-list {
     list-style-type: none;
     padding: 0;
 }
 
-#patients-list li, #search-results-list li {
+#patients-list li,
+#search-results-list li {
     padding: 8px 0;
     border-bottom: 1px solid #eee;
 }
 
-#patients-list li:last-child, #search-results-list li:last-child {
+#patients-list li:last-child,
+#search-results-list li:last-child {
     border-bottom: none;
 }
 
-#add-patient-message, #search-results {
+#add-patient-message,
+#search-results {
     margin-top: 15px;
+}
+
+.delete-patient {
+    background-color: #dc3545; /* 紅色背景 */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.delete-patient:hover {
+    background-color: #c82333; /* 稍深的紅色背景 */
 }

@@ -1,7 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeBridge('api', {
+contextBridge.exposeInMainWorld('api', {
     getPatients: () => ipcRenderer.invoke('get-patients'),
-    addPatient: (name, birthdate) => ipcRenderer.invoke('add-patient', name, birthdate),
-    searchPatientsByBirthdate: (birthdate) => ipcRenderer.invoke('search-patients-by-birthdate', birthdate),
+    addPatient: (name, birthdate, phone, lineid, email) => ipcRenderer.invoke('add-patient', name, birthdate, phone, lineid, email),
+    searchPatients: (criteria) => ipcRenderer.invoke('search-patients', criteria),
+    deletePatient: (id) => ipcRenderer.invoke('delete-patient', id),
+    //  新增 editPatient API
 });

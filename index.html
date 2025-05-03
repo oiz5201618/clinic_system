@@ -1,44 +1,107 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
-    <title>我的 Electron 應用程式</title>
+    <title>病患管理系統</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <h1>病患管理系統</h1>
 
-    <h2>新增病人</h2>
-    <form id="add-patient-form">
-        <div>
-            <label for="name">姓名:</label>
-            <input type="text" id="name" required>
-        </div>
-        <div>
-            <label for="birthdate">生日:</label>
-            <input type="date" id="birthdate" required>
-        </div>
-        <button type="submit">新增病人</button>
-        <p id="add-patient-message"></p>
-    </form>
+    <nav>
+        <ul>
+            <li class="nav-item active" data-tab="add-patient">新增病人</li>
+            <li class="nav-item" data-tab="search-patient">查詢病人</li>
+            <li class="nav-item" data-tab="medical-records">病歷系統</li>
+        </ul>
+    </nav>
 
-    <h2>查詢病人 (依生日)</h2>
-    <form id="search-patient-form">
-        <div>
-            <label for="search-birthdate">查詢生日:</label>
-            <input type="date" id="search-birthdate" required>
-        </div>
-        <button type="submit">查詢</button>
-    </form>
-
-    <h2>病人列表</h2>
-    <ul id="patients-list"></ul>
-
-    <div id="search-results">
-        <h3>查詢結果</h3>
-        <ul id="search-results-list"></ul>
+    <div id="add-patient" class="tab-content active">
+        <h2>新增病人</h2>
+        <form id="add-patient-form">
+            <div>
+                <label for="name">姓名:</label>
+                <input type="text" id="name" required>
+            </div>
+            <div>
+                <label for="birthdate">生日:</label>
+                <input type="date" id="birthdate" required>
+            </div>
+            <div>
+                <label for="phone">電話:</label>
+                <input type="text" id="phone">
+            </div>
+            <div>
+                <label for="lineid">LineID:</label>
+                <input type="text" id="lineid">
+            </div>
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email">
+            </div>
+            <button type="submit">新增病人</button>
+            <p id="add-patient-message"></p>
+        </form>
     </div>
 
+    <div id="search-patient" class="tab-content">
+        <h2>查詢病人</h2>
+        <form id="search-patient-form">
+            <div>
+                <label for="search-name">姓名:</label>
+                <input type="text" id="search-name">
+            </div>
+            <div>
+                <label for="search-birthdate">生日:</label>
+                <input type="date" id="search-birthdate">
+            </div>
+            <div>
+                <label for="search-phone">電話:</label>
+                <input type="text" id="search-phone">
+            </div>
+            <div>
+                <label for="search-lineid">LineID:</label>
+                <input type="text" id="search-lineid">
+            </div>
+            <div>
+                <label for="search-email">Email:</label>
+                <input type="email" id="search-email">
+            </div>
+            <button type="submit">查詢</button>
+        </form>
+        <div id="search-results">
+            <h3>查詢結果</h3>
+            <ul id="search-results-list"></ul>
+        </div>
+    </div>
+
+    <div id="medical-records" class="tab-content">
+        <h2>病歷系統</h2>
+        <p>這裏是病歷系統的內容，等待補充。</p>
+        </div>
+
     <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.nav-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            navItems.forEach(navItem => {
+                navItem.addEventListener('click', () => {
+                    // 移除所有 nav-item 和 tab-content 的 active class
+                    navItems.forEach(item => item.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    // 為點擊的 nav-item 和對應的 tab-content 添加 active class
+                    navItem.classList.add('active');
+                    const targetTab = navItem.dataset.tab;
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+        });
+    </script>
 </body>
+
 </html>

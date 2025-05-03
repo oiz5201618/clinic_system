@@ -17,7 +17,7 @@ function createWindow() {
 
     mainWindow.loadFile('index.html');
 
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     mainWindow.on('closed', () => {
         mainWindow = null;
@@ -41,18 +41,19 @@ app.on('window-all-closed', () => {
 });
 
 const dbConfig = {
-    server: 'your_server_ip_or_name',
+    server: 'DESKTOP-RN3BJEI\\SQLEXPRESS',
     authentication: {
         type: 'default',
         options: {
-            userName: 'your_sql_server_username',
-            password: 'your_sql_server_password'
+            userName: 'ShaoHua',
+            password: '1234567778'
         }
     },
-    database: 'clinic_db',
     options: {
-        encrypt: false, // 根據你的 SQL Server 配置
-        trustServerCertificate: true // 在開發環境中可能需要
+        database: 'clinic_db',
+        encrypt: true,
+        trustServerCertificate: true,
+        connectTimeout: 10000
     }
 };
 
@@ -66,7 +67,7 @@ ipcMain.handle('get-patients', async () => {
                 reject(err.message);
             } else {
                 const patients = [];
-                const request = new Tedious.Request("SELECT PatientID, Name, Birthdate FROM Patients", (err, rowCount) => {
+                const request = new Tedious.Request("SELECT PatientID, Name, Birthdate, Phone, LineID, Email FROM Patients", (err, rowCount) => {
                     if (err) {
                         console.error('查詢錯誤 (get-patients):', err);
                         reject(err.message);
@@ -92,7 +93,7 @@ ipcMain.handle('get-patients', async () => {
     });
 });
 
-ipcMain.handle('add-patient', async (event, name, birthdate) => {
+ipcMain.handle('add-patient', async (event, name, birthdate, phone, lineid, email) => {
     return new Promise((resolve, reject) => {
         const connection = new Tedious.Connection(dbConfig);
 
@@ -102,7 +103,7 @@ ipcMain.handle('add-patient', async (event, name, birthdate) => {
                 reject(err.message);
             } else {
                 const request = new Tedious.Request(
-                    "INSERT INTO Patients (Name, Birthdate) VALUES (@Name, @Birthdate); SELECT SCOPE_IDENTITY() AS PatientID;",
+                    "INSERT INTO Patients (Name, Birthdate, Phone, LineID, Email) VALUES (@Name, @Birthdate, @Phone, @LineID, @Email); SELECT SCOPE_IDENTITY() AS PatientID;",
                     (err, rowCount) => {
                         if (err) {
                             console.error('查詢錯誤 (add-patient):', err);
@@ -124,6 +125,9 @@ ipcMain.handle('add-patient', async (event, name, birthdate) => {
 
                 request.addParameter('Name', Tedious.TYPES.NVarChar, name);
                 request.addParameter('Birthdate', Tedious.TYPES.Date, birthdate);
+                request.addParameter('Phone', Tedious.TYPES.NVarChar, phone);
+                request.addParameter('LineID', Tedious.TYPES.NVarChar, lineid);
+                request.addParameter('Email', Tedious.TYPES.NVarChar, email);
 
                 connection.execSql(request);
             }
@@ -133,30 +137,51 @@ ipcMain.handle('add-patient', async (event, name, birthdate) => {
     });
 });
 
-ipcMain.handle('search-patients-by-birthdate', async (event, birthdate) => {
+ipcMain.handle('search-patients', async (event, criteria) => {
     return new Promise((resolve, reject) => {
         const connection = new Tedious.Connection(dbConfig);
 
         connection.on('connect', (err) => {
             if (err) {
-                console.error('連接錯誤 (search-by-birthdate):', err);
+                console.error('連接錯誤 (search-patients):', err);
                 reject(err.message);
             } else {
-                const patients = [];
-                const request = new Tedious.Request(
-                    "SELECT PatientID, Name, Birthdate FROM Patients WHERE Birthdate = @Birthdate",
-                    (err, rowCount) => {
-                        if (err) {
-                            console.error('查詢錯誤 (search-by-birthdate):', err);
-                            reject(err.message);
-                        } else {
-                            connection.close();
-                            resolve(patients);
-                        }
-                    }
-                );
+                let sql = "SELECT PatientID, Name, Birthdate, Phone, LineID, Email FROM Patients WHERE 1=1";
+                const parameters = [];
 
-                request.addParameter('Birthdate', Tedious.TYPES.Date, birthdate);
+                if (criteria.name) {
+                    sql += " AND Name LIKE @Name";
+                    parameters.push({ name: 'Name', type: Tedious.TYPES.NVarChar, value: `%${criteria.name}%` });
+                }
+                if (criteria.birthdate) {
+                    sql += " AND Birthdate = @Birthdate";
+                    parameters.push({ name: 'Birthdate', type: Tedious.TYPES.Date, value: criteria.birthdate });
+                }
+                if (criteria.phone) {
+                    sql += " AND Phone = @Phone";
+                    parameters.push({ name: 'Phone', type: Tedious.TYPES.NVarChar, value: criteria.phone });
+                }
+                if (criteria.lineid) {
+                    sql += " AND LineID = @LineID";
+                    parameters.push({ name: 'LineID', type: Tedious.TYPES.NVarChar, value: criteria.lineid });
+                }
+                if (criteria.email) {
+                    sql += " AND Email = @Email";
+                    parameters.push({ name: 'Email', type: Tedious.TYPES.NVarChar, value: criteria.email });
+                }
+
+                const patients = [];
+                const request = new Tedious.Request(sql, (err, rowCount) => {
+                    if (err) {
+                        console.error('查詢錯誤 (search-patients):', err);
+                        reject(err.message);
+                    } else {
+                        connection.close();
+                        resolve(patients);
+                    }
+                });
+
+                parameters.forEach(param => request.addParameter(param.name, param.type, param.value));
 
                 request.on('row', (columns) => {
                     const patient = {};
@@ -165,6 +190,38 @@ ipcMain.handle('search-patients-by-birthdate', async (event, birthdate) => {
                     });
                     patients.push(patient);
                 });
+
+                connection.execSql(request);
+            }
+        });
+
+        connection.connect();
+    });
+});
+
+ipcMain.handle('delete-patient', async (event, id) => {
+    return new Promise((resolve, reject) => {
+        const connection = new Tedious.Connection(dbConfig);
+
+        connection.on('connect', (err) => {
+            if (err) {
+                console.error('連接錯誤 (delete-patient):', err);
+                reject(err.message);
+            } else {
+                const request = new Tedious.Request(
+                    "DELETE FROM Patients WHERE PatientID = @PatientID",
+                    (err, rowCount) => {
+                        if (err) {
+                            console.error('刪除病人錯誤:', err);
+                            reject(err.message);
+                        } else {
+                            connection.close();
+                            resolve(`成功刪除病人，ID 為: ${id}`);
+                        }
+                    }
+                );
+
+                request.addParameter('PatientID', Tedious.TYPES.Int, id);
 
                 connection.execSql(request);
             }
