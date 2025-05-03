@@ -47,21 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const listItem = document.createElement('li');
                     listItem.innerHTML = `
                         ${patient.Name} (ID: ${patient.PatientID}, 生日: ${patient.Birthdate ? new Date(patient.Birthdate).toLocaleDateString() : 'N/A'}, 電話: ${patient.Phone || 'N/A'}, LineID: ${patient.LineID || 'N/A'}, Email: ${patient.Email || 'N/A'})
-                        <button class="edit-patient" data-id="${patient.PatientID}">編輯</button>
                         <button class="delete-patient" data-id="${patient.PatientID}">刪除</button>
                     `;
                     searchResultsList.appendChild(listItem);
                 });
                 searchResultsDiv.style.display = 'block';
-
-                // 編輯和刪除按鈕的事件監聽器
-                document.querySelectorAll('.edit-patient').forEach(button => {
-                    button.addEventListener('click', () => {
-                        const patientId = button.dataset.id;
-                        // 這裡可以加入編輯病人的邏輯，例如顯示一個編輯表單
-                        alert(`編輯病人 ID: ${patientId}`);
-                    });
-                });
 
                 document.querySelectorAll('.delete-patient').forEach(button => {
                     button.addEventListener('click', () => {
@@ -70,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             window.api.deletePatient(patientId)
                                 .then(message => {
                                     alert(message);
-                                    searchPatientForm.dispatchEvent(new Event('submit')); // 重新執行查詢以更新列表
+                                    searchPatientForm.dispatchEvent(new Event('submit'));
                                 })
                                 .catch(error => {
                                     console.error('刪除病人失敗:', error);
