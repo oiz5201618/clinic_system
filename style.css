@@ -103,7 +103,8 @@ button:hover {
 }
 
 .delete-patient {
-    background-color: #dc3545; /* 紅色背景 */
+    background-color: #dc3545;
+    /* 紅色背景 */
     color: white;
     border: none;
     padding: 5px 10px;
@@ -112,5 +113,41 @@ button:hover {
 }
 
 .delete-patient:hover {
-    background-color: #c82333; /* 稍深的紅色背景 */
+    background-color: #c82333;
+    /* 稍深的紅色背景 */
+}
+
+/* 新增的樣式 */
+.checkbox-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.checkbox-container div {
+    /* margin-right: 10px; */
+    margin-bottom: 5px;
+}
+
+.checkbox-label {
+    display: inline-block;
+    /* width: 35px; */
+    text-align: left;
+}
+
+.load-medical-record {
+    background-color: #008000;
+    /* 綠色背景 */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+    margin-right: 10px;
+    /* 與刪除按鈕間隔 */
+}
+
+.load-medical-record:hover {
+    background-color: #006400;
+    /* 稍深的綠色背景 */
 }

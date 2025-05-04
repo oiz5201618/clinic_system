@@ -79,7 +79,32 @@
 
     <div id="medical-records" class="tab-content">
         <h2>病歷系統</h2>
-        <p>這裏是病歷系統的內容，等待補充。</p>
+        <form id="medical-record-form">
+            <div>
+                <label for="patient-id-display">病人 ID:</label>
+                <input type="text" id="patient-id-display" readonly>
+            </div>
+            <div>
+                <h3>受傷部位</h3>
+                <div id="injury-parts">
+                </div>
+            </div>
+            <div>
+                <h3>常見問題</h3>
+                <div id="common-problems">
+                </div>
+            </div>
+            <div>
+                <label for="chief-complaint">主述:</label>
+                <textarea id="chief-complaint" name="chief-complaint" rows="4" cols="50"></textarea>
+            </div>
+            <button type="submit">儲存病歷</button>
+            <p id="medical-record-message"></p>
+        </form>
+        <div id="all-medical-records">
+            <h3>所有病歷</h3>
+            <ul id="medical-records-list"></ul>
+        </div>
     </div>
 
     <script src="script.js"></script>
