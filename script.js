@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // 在這裡可以加入根據 patientId 載入病歷的邏輯
                         // 例如，如果病歷系統需要先選擇病人才能載入，
                         // 你可以在這裡設定相關的 UI 元素。
-                        alert(`準備載入病人 ID ${patientId} 的病歷`);
+                        //alert(`準備載入病人 ID ${patientId} 的病歷`);
                         loadMedicalRecords(patientId);
                     });
                 });
