@@ -444,7 +444,7 @@ ipcMain.handle('get-medical-records', async (event, patientId) => {
             } else {
                 const medicalRecords = [];
                 const request = new Tedious.Request(
-                    "SELECT RecordID, RecordDate, Details FROM MedicalRecord WHERE PatientID = @PatientID",
+                    "SELECT RecordID, RecordDate, Details FROM MedicalRecord WHERE PatientID = @PatientID ORDER BY RecordDate DESC", // 加入 ORDER BY
                     (err, rowCount) => {
                         if (err) {
                             console.error('查詢病歷錯誤:', err);
