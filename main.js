@@ -304,118 +304,134 @@ ipcMain.handle('get-common-problems', async () => {
 });
 
 ipcMain.handle('save-medical-record', async (event, medicalRecordData) => {
-    return new Promise(async (resolve, reject) => {
-        const connection = new Tedious.Connection(dbConfig);
-
-        connection.on('connect', async (err) => {
-            if (err) {
-                console.error('連接錯誤 (save-medical-record):', err);
-                reject(err.message);
-                return;
-            }
-
-            connection.beginTransaction(async (err, transaction) => { // 取得 transaction 物件
-                if (err) {
-                    console.error('開啟事務失敗:', err);
-                    reject(err.message);
-                    connection.close();
-                    return;
-                }
-
-                try {
-                    // 1. 插入 MedicalRecord 的基本資料
-                    const recordRequest = new Tedious.Request(
-                        "INSERT INTO MedicalRecord (PatientID, RecordDate, Details) OUTPUT INSERTED.RecordID VALUES (@PatientID, @RecordDate, @Details);",
-                        async (err, rowCount, rows) => {
-                            if (err) {
-                                console.error('插入 MedicalRecord 失敗:', err);
-                                transaction.rollback(err => { // 使用 transaction.rollback
-                                    if (err) console.error('事務回滾失敗:', err);
-                                    connection.close();
-                                    reject(err.message);
-                                });
-                                return;
-                            }
-
-                            const newRecordId = rows[0][0].value;
-
-                            // 2. 插入 InjuryPartMedicalRecord 的資料
-                            const injuryPartInserts = medicalRecordData.injuryParts.map(injuryPartId => {
-                                return new Promise((resolve, reject) => {
-                                    const injuryPartRequest = new Tedious.Request(
-                                        "INSERT INTO InjuryPartMedicalRecord (InjuryPartID, RecordID) VALUES (@InjuryPartID, @RecordID);",
-                                        (err, rowCount) => {
-                                            if (err) {
-                                                reject(err);
-                                            } else {
-                                                resolve();
-                                            }
-                                        }
-                                    );
-                                    injuryPartRequest.addParameter('InjuryPartID', Tedious.TYPES.Int, injuryPartId);
-                                    injuryPartRequest.addParameter('RecordID', Tedious.TYPES.Int, newRecordId);
-                                    connection.execSql(injuryPartRequest);
-                                });
-                            });
-
-                            await Promise.all(injuryPartInserts);
-
-                            // 3. 插入 CommonProblemMedicalRecord 的資料 (如果需要)
-                            const commonProblemInserts = medicalRecordData.commonProblems.map(commonProblemId => {
-                                return new Promise((resolve, reject) => {
-                                    const commonProblemRequest = new Tedious.Request(
-                                        "INSERT INTO CommonProblemMedicalRecord (CommonProblemID, RecordID) VALUES (@CommonProblemID, @RecordID);",
-                                        (err, rowCount) => {
-                                            if (err) {
-                                                reject(err);
-                                            } else {
-                                                resolve();
-                                            }
-                                        }
-                                    );
-                                    commonProblemRequest.addParameter('CommonProblemID', Tedious.TYPES.Int, commonProblemId);
-                                    commonProblemRequest.addParameter('RecordID', Tedious.TYPES.Int, newRecordId);
-                                    connection.execSql(commonProblemRequest);
-                                });
-                            });
-
-                            await Promise.all(commonProblemInserts);
-
-                            // 4. 提交事務
-                            transaction.commit(err => { // 使用 transaction.commit
-                                if (err) {
-                                    console.error('事務提交失敗:', err);
-                                    connection.close();
-                                    reject(err.message);
-                                } else {
-                                    console.log('病歷儲存成功');
-                                    connection.close();
-                                    resolve('病歷儲存成功');
-                                }
-                            });
-                        }
-                    );
-
-                    recordRequest.addParameter('PatientID', Tedious.TYPES.Int, medicalRecordData.patientId);
-                    recordRequest.addParameter('RecordDate', Tedious.TYPES.DateTime, medicalRecordData.recordDate);
-                    recordRequest.addParameter('Details', Tedious.TYPES.NVarChar, medicalRecordData.details);
-
-                    connection.execSql(recordRequest);
-
-                } catch (error) {
-                    console.error('儲存病歷過程中發生錯誤:', error);
-                    transaction.rollback(err => { // 使用 transaction.rollback
-                        if (err) console.error('事務回滾失敗:', err);
+    return new Promise((resolve, reject) => {
+      const connection = new Tedious.Connection(dbConfig);
+  
+      connection.on('connect', async (err) => {
+        if (err) {
+          console.error('連接錯誤 (save-medical-record):', err);
+          reject(err.message);
+          return;
+        }
+  
+        connection.beginTransaction(async (err) => {
+          if (err) {
+            console.error('開啟事務失敗:', err);
+            reject(err.message);
+            connection.close();
+            return;
+          }
+  
+          try {
+            // 包裝 insertMedicalRecord 成 Promise
+            const insertMedicalRecord = () => {
+              return new Promise((resolve, reject) => {
+                const request = new Tedious.Request(
+                  "INSERT INTO MedicalRecord (PatientID, RecordDate, Details) OUTPUT INSERTED.RecordID VALUES (@PatientID, @RecordDate, @Details);",
+                  (err) => {
+                    if (err) {
+                      console.error('插入 MedicalRecord 失敗:', err);
+                      connection.rollbackTransaction(rbErr => {
+                        if (rbErr) console.error('事務回滾失敗:', rbErr);
                         connection.close();
-                        reject(error.message);
-                    });
-                }
+                        reject(err.message);
+                      });
+                    }
+                  }
+                );
+  
+                let insertedId = null;
+  
+                request.addParameter('PatientID', Tedious.TYPES.Int, medicalRecordData.patientId);
+                request.addParameter('RecordDate', Tedious.TYPES.DateTime, medicalRecordData.recordDate);
+                request.addParameter('Details', Tedious.TYPES.NVarChar, medicalRecordData.details);
+  
+                request.on('row', (columns) => {
+                  insertedId = columns[0].value;
+                });
+  
+                request.on('requestCompleted', () => {
+                  if (insertedId !== null) {
+                    resolve(insertedId);
+                  } else {
+                    reject('未能取得 RecordID');
+                  }
+                });
+  
+                connection.execSql(request);
+              });
+            };
+  
+            const newRecordId = await insertMedicalRecord();
+  
+            // 2. 插入 InjuryPartMedicalRecord 的資料
+            const injuryPartInserts = medicalRecordData.injuryParts.map(injuryPartId => {
+              return new Promise((resolve, reject) => {
+                const injuryPartRequest = new Tedious.Request(
+                  "INSERT INTO InjuryPart_MedicalRecord (InjuryPartID, RecordID) VALUES (@InjuryPartID, @RecordID);",
+                  (err) => {
+                    if (err) {
+                      reject(err);
+                    } else {
+                      resolve();
+                    }
+                  }
+                );
+                injuryPartRequest.addParameter('InjuryPartID', Tedious.TYPES.Int, injuryPartId);
+                injuryPartRequest.addParameter('RecordID', Tedious.TYPES.Int, newRecordId);
+                connection.execSql(injuryPartRequest);
+              });
             });
+  
+            await Promise.all(injuryPartInserts);
+  
+            // 3. 插入 CommonProblemMedicalRecord 的資料 (如果需要)
+            const commonProblemInserts = medicalRecordData.commonProblems.map(commonProblemId => {
+              return new Promise((resolve, reject) => {
+                const commonProblemRequest = new Tedious.Request(
+                  "INSERT INTO CommonProblem_MedicalRecord (CommonProblemID, RecordID) VALUES (@CommonProblemID, @RecordID);",
+                  (err) => {
+                    if (err) {
+                      reject(err);
+                    } else {
+                      resolve();
+                    }
+                  }
+                );
+                commonProblemRequest.addParameter('CommonProblemID', Tedious.TYPES.Int, commonProblemId);
+                commonProblemRequest.addParameter('RecordID', Tedious.TYPES.Int, newRecordId);
+                connection.execSql(commonProblemRequest);
+              });
+            });
+  
+            await Promise.all(commonProblemInserts);
+  
+            connection.commitTransaction(err => {
+              if (err) {
+                console.error('事務提交失敗:', err);
+                connection.close();
+                reject(err.message);
+              } else {
+                console.log('病歷儲存成功');
+                connection.close();
+                resolve('病歷儲存成功');
+              }
+            });
+  
+          } catch (error) {
+            console.error('儲存病歷過程中發生錯誤:', error);
+            connection.rollbackTransaction(err => {
+              if (err) console.error('事務回滾失敗:', err);
+              connection.close();
+              reject(error.message);
+            });
+          }
         });
-
-        connection.connect();
+      });
+  
+      connection.connect();
     });
-});
+  });
 
 ipcMain.handle('get-medical-records', async (event, patientId) => {
     return new Promise((resolve, reject) => {
