@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const injuryPartsDiv = document.getElementById('injury-parts');
     const commonProblemsDiv = document.getElementById('common-problems');
     const medicalRecordMessage = document.getElementById('medical-record-message');
+    const medicalRecordsList = document.getElementById('medical-records-list');
+    medicalRecordsList.innerHTML = ''; // 初始化清空病歷列表
 
     searchResultsDiv.style.display = 'none';
 
@@ -129,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // 例如，如果病歷系統需要先選擇病人才能載入，
                         // 你可以在這裡設定相關的 UI 元素。
                         alert(`準備載入病人 ID ${patientId} 的病歷`);
+                        loadMedicalRecords(patientId);
                     });
                 });
 
@@ -173,3 +176,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+async function loadMedicalRecords(patientId) {
+    try {
+        const medicalRecords = await window.api.getMedicalRecords(patientId);
+        const medicalRecordsList = document.getElementById('medical-records-list');
+        medicalRecordsList.innerHTML = ''; // 清空之前的病歷
+
+        if (medicalRecords.length > 0) {
+            medicalRecords.forEach(record => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    病歷日期: ${new Date(record.RecordDate).toLocaleDateString()}, 
+                    主述: ${record.Details}
+                `;
+                medicalRecordsList.appendChild(listItem);
+            });
+        } else {
+            medicalRecordsList.textContent = "沒有找到該病患的病歷。";
+        }
+    } catch (error) {
+        console.error('載入病歷失敗:', error);
+        medicalRecordsList.textContent = `載入病歷失敗: ${error}`;
+    }
+}
